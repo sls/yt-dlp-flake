@@ -41,19 +41,19 @@ Available recipes:
 ```
 
 ### Run the image
-As an example, this shell function will allow use of the image as if it were a local program:
+As an example, this shell function will allow use of the image as if it were a local program.
+Add this to your `.bashrc` or `.zshrc`:
 
 ```bash
- yt-dlp ()
-
-{
-
-    podman run --volume "$PWD:/downloads:Z" --rm yt-dlp-image:latest $*
-
+yt-dlp() {
+    podman run \
+        --volume "$PWD:/downloads:Z" \
+        --rm \
+        localhost/yt-dlp-image:latest \
+        "$@"
 }
-```
 
-You can test new versions by running them directly, e.g. yt-dlp-image:2025-12-08, before promoting them to latest to for your scripts, functions, aliases, etc.
+You can test new versions by running them directly (e.g. `localhost/yt-dlp-image:2025-12-08`) before promoting them to `latest` to for your scripts, functions, aliases, etc.
 
 ### Podman container policy
 
@@ -96,5 +96,3 @@ just promote
 # Cleanup old layers/images
 just clean
 ```
-
-
