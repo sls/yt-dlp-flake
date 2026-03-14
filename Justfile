@@ -74,12 +74,28 @@ update-sources:
     echo "Upstream Hash: $HASH_HEX"
 
     # Generate the JSON file
+    TEMP_JSON=$(mktemp)
     jq -n \
         --arg v "$LATEST_TAG" \
         --arg u "$DOWNLOAD_URL" \
         --arg h "$HASH_HEX" \
-        '{version: $v, url: $u, hash: $h}' > "{{OUT_FILE}}"
+        '{version: $v, url: $u, hash: $h}' > "$TEMP_JSON"
+    if [[ -f {{OUT_FILE}} && -r {{OUT_FILE}} ]]; then
+        if diff -q "$TEMP_JSON" {{OUT_FILE}} > /dev/null; then
+            echo "{{OUT_FILE}} up to date"
+            rm "$TEMP_JSON"
+            exit 0
+        fi
+    fi
 
+    # we have changes in the upstream sources info
+    if [[ ! -w {{OUT_FILE}} ]]; then
+      echo "Upstream sources updated, but can't write {{OUT_FILE}}"
+      echo "Please correct and update with data from $TEMP_JSON"
+      exit 1
+    fi
+
+    mv "$TEMP_JSON" "{{OUT_FILE}}"
     echo "Updated {{OUT_FILE}} successfully."
 
 # build the image
