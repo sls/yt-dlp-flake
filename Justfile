@@ -116,6 +116,10 @@ clean:
       | grep -v ":latest$" \
       | xargs -r podman rmi
 
+# list the current images
+list-images:
+    podman image ls localhost/yt-dlp-image
+
 # show the sorted layers in the latest image
 history:
     podman history localhost/yt-dlp-image:latest | sort -h -k 5
