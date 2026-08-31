@@ -19,7 +19,7 @@ all: update-sources build load
 update-sources:
     #!/usr/bin/env bash
     set -euo pipefail
-    
+
     # Check dependencies
     for cmd in curl jq; do
         if ! command -v "$cmd" &> /dev/null; then
@@ -29,9 +29,9 @@ update-sources:
     done
 
     echo "Fetching latest release metadata for {{REPO_OWNER}}/{{REPO_NAME}}..."
-    
+
     API_URL="https://api.github.com/repos/{{REPO_OWNER}}/{{REPO_NAME}}/releases/latest"
-    
+
     # Capture HTTP code and body to handle rate limits/errors
     HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" "$API_URL")
     HTTP_BODY=$(echo "$HTTP_RESPONSE" | head -n -1)
@@ -56,12 +56,12 @@ update-sources:
     fi
 
     DOWNLOAD_URL=$(echo "$ASSET_JSON" | jq -r '.browser_download_url')
-    
+
     # Extract the SHA256 digest
     # GitHub returns format "sha256:abcdef..."
     # We split by ':' to get the raw hex, which Nix fetchurl accepts natively.
     DIGEST_RAW=$(echo "$ASSET_JSON" | jq -r '.digest')
-    
+
     if [ "$DIGEST_RAW" = "null" ] || [ -z "$DIGEST_RAW" ]; then
         echo "Error: GitHub API did not provide a digest for this asset." >&2
         exit 1
@@ -100,6 +100,31 @@ update-sources:
 
 # build the image
 build:
+    #! /usr/bin/env bash
+    set -euo pipefail
+
+    # Check if sources.json exists
+    if [[ ! -f sources.json ]]; then
+        echo "Error: sources.json not found. Run 'update-sources' first." >&2
+        exit 1
+    fi
+
+    # Store modification time of sources.json
+    SOURCE_MTIME=$(stat -c %Y sources.json 2>/dev/null || stat -f %m sources.json 2>/dev/null)
+
+    # Store current result directory mtime (if exists)
+    if [[ -a result ]]; then
+        RESULT_MTIME=$(stat -c %Y result 2>/dev/null || stat -f %m result 2>/dev/null)
+
+        # If source is older than result, skip build
+        if [[ "$SOURCE_MTIME" -le "$RESULT_MTIME" ]]; then
+            echo "Build up to date (sources.json unchanged)"
+            exit 0
+        fi
+    fi
+
+    # Source file is newer than previous result, proceed with build
+    echo "Building new image..."
     nix build
 
 # load into podman
