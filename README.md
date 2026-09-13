@@ -13,6 +13,7 @@ This project solves that by wrapping `yt-dlp` and `deno` in a minimal, highly is
 * **Minimal Footprint:** Uses Nix to build a layered image containing *only* the necessary closures.
     * **Size:** ~600MB (compared to ~1GB for standard distro-based images with these dependencies).
     * Uses `ffmpeg-headless` and a custom Python 3 closure.
+* **TLS Impersonation:** Ships `curl_cffi` (Python bindings for `curl-impersonate`), which the upstream zipimport binary cannot bundle itself, for extractors that require browser TLS fingerprints.
 * **Reproducible:** Built using Nix Flakes. The build is declarative and relies on pinned SHA256 hashes from GitHub Releases.
 * **Secure Supply Chain:** The build process verifies the upstream SHA256 digest provided by the `yt-dlp` GitHub Release API before building.
 

@@ -24,6 +24,12 @@
           }} $out/bin/yt-dlp
         '';
 
+        # python with curl_cffi for TLS impersonation (some sites fingerprint
+        # the TLS client hello). The zipimport binary yt-dlp ships cannot
+        # bundle this dependency, so it must come from the interpreter env:
+        # https://github.com/yt-dlp/yt-dlp#impersonation
+        pythonEnv = pkgs.python3.withPackages (ps: [ ps.curl-cffi ]);
+
         # define the image definition here so we can reuse it
         image = pkgs.dockerTools.buildLayeredImage {
           name = "localhost/yt-dlp-image";
@@ -37,7 +43,7 @@
           contents = [
             yt-dlp-bin             # the binary we fetched
             pkgs.cacert            # required for HTTPS
-            pkgs.python3           # runtime for yt-dlp
+            pythonEnv             # python runtime for yt-dlp (+ curl_cffi impersonation)
             pkgs.deno              # JS runtime
             pkgs.ffmpeg-headless   # for merging video/audio
             pkgs.unzip
